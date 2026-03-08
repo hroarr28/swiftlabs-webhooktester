@@ -1,215 +1,171 @@
-# Deployment Guide - Webhook Tester
+# Webhook Tester Deployment Guide
 
-## Pre-Deployment Checklist
+## ✅ Completed Steps
 
-- [x] Build passes (`npm run build`)
-- [x] TypeScript compiles
-- [x] All critical features implemented
-- [ ] Supabase migration run
-- [ ] Environment variables configured
-- [ ] Stripe webhook configured
-- [ ] End-to-end testing complete
+1. **GitHub repo created:** https://github.com/hroarr28/swiftlabs-webhooktester
+2. **Code pushed to main branch** — All commits synced
 
 ---
 
-## Step 1: Run Supabase Migration
+## 🚀 Next Steps (Manual)
 
-**Option A: Supabase Dashboard (Easiest)**
+### 1. Deploy to Vercel
 
-1. Go to https://supabase.com/dashboard
-2. Open project: https://ylehaohyelejaytpzrbf.supabase.co
-3. Navigate to SQL Editor
-4. Copy contents of `supabase/migrations/001_webhook_schema.sql`
-5. Paste and run
-6. Verify tables created in Table Editor
+**Option A: Vercel Dashboard (Recommended)**
+1. Visit https://vercel.com/new
+2. Import from GitHub: `hroarr28/swiftlabs-webhooktester`
+3. Configure project:
+   - **Framework Preset:** Next.js
+   - **Root Directory:** `./`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `.next`
+4. Add environment variables (see below)
+5. Deploy
 
-**Option B: Supabase CLI**
-
+**Option B: Vercel CLI**
 ```bash
 cd ~/projects/swiftlabs/projects/webhooktester
-
-# Link to project (if not already linked)
-supabase link --project-ref ylehaohyelejaytpzrbf
-
-# Push migration
-supabase db push
-
-# Or run SQL directly
-supabase db execute --file supabase/migrations/001_webhook_schema.sql
-```
-
----
-
-## Step 2: Create GitHub Repo
-
-```bash
-cd ~/projects/swiftlabs/projects/webhooktester
-
-# Create repo on GitHub (via gh CLI or web)
-gh repo create hroarr28/swiftlabs-webhooktester --public
-
-# Add remote
-git remote add origin git@github.com:hroarr28/swiftlabs-webhooktester.git
-
-# Push code
-git push -u origin main
-```
-
----
-
-## Step 3: Deploy to Vercel
-
-**Option A: Vercel CLI**
-
-```bash
-cd ~/projects/swiftlabs/projects/webhooktester
-
-# Login (if not already)
-vercel login
-
-# Deploy
+vercel login  # Authenticate once
 vercel --prod
 ```
 
-**Option B: Vercel Web UI**
+---
 
-1. Go to https://vercel.com
-2. Click "Add New Project"
-3. Import `hroarr28/swiftlabs-webhooktester`
-4. Configure environment variables (see below)
-5. Deploy
+### 2. Environment Variables (Production)
+
+Add these in Vercel dashboard → Project Settings → Environment Variables:
+
+**Copy values from `.env.local` in this repo** (SwiftLabs shared credentials)
+
+```env
+# Supabase (SwiftLabs shared project - ref: ijejglwvvufgbgpwouus)
+NEXT_PUBLIC_SUPABASE_URL=<from .env.local>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<from .env.local>
+SUPABASE_SERVICE_ROLE_KEY=<from .env.local>
+
+# Stripe (SwiftLabs shared, TEST MODE)
+STRIPE_SECRET_KEY=<from .env.local>
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<from .env.local>
+STRIPE_PRICE_ID=<from .env.local>
+STRIPE_WEBHOOK_SECRET=<from .env.local>
+
+# Site
+NEXT_PUBLIC_SITE_URL=[YOUR VERCEL URL - e.g. https://webhooktester-xxxx.vercel.app]
+```
+
+**Note:** Update `NEXT_PUBLIC_SITE_URL` with the actual Vercel deployment URL after first deploy.
 
 ---
 
-## Step 4: Configure Environment Variables (Vercel)
+### 3. Configure Stripe Webhook
 
-In Vercel project settings → Environment Variables, add:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://ylehaohyelejaytpzrbf.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[from Supabase project settings]
-SUPABASE_SERVICE_ROLE_KEY=[from Supabase project settings]
-
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=[from Stripe dashboard]
-STRIPE_SECRET_KEY=[from Stripe dashboard]
-STRIPE_PRICE_ID=price_1T8aEaCjlSeC9GYcKMGIqZvO
-STRIPE_WEBHOOK_SECRET=[get after creating webhook in Step 5]
-
-NEXT_PUBLIC_SITE_URL=https://webhooktester.dev
-```
-
-**To get Supabase keys:**
-1. Go to https://supabase.com/dashboard/project/ylehaohyelejaytpzrbf/settings/api
-2. Copy "anon public" key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Copy "service_role" key → `SUPABASE_SERVICE_ROLE_KEY`
-
-**To get Stripe keys (TEST MODE first):**
-1. Go to https://dashboard.stripe.com/test/apikeys
-2. Copy "Publishable key" → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-3. Copy "Secret key" → `STRIPE_SECRET_KEY`
-
----
-
-## Step 5: Configure Stripe Webhook
-
-1. Go to https://dashboard.stripe.com/test/webhooks
-2. Click "Add endpoint"
-3. URL: `https://webhooktester.dev/api/webhook`
-4. Events to listen for:
+1. Visit https://dashboard.stripe.com/test/webhooks
+2. Click **Add endpoint**
+3. Set **Endpoint URL:** `https://[your-vercel-url]/api/webhook`
+4. Select events to listen for:
    - `checkout.session.completed`
+   - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
-5. Click "Add endpoint"
-6. Copy "Signing secret" → `STRIPE_WEBHOOK_SECRET` in Vercel env vars
-7. Redeploy after adding webhook secret
+5. Click **Add endpoint**
+6. Copy the **Signing secret** (starts with `whsec_`)
+7. Add to Vercel environment variables:
+   ```
+   STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
+   ```
+8. Redeploy to apply the new env var
 
 ---
 
-## Step 6: Test End-to-End
+### 4. Test Production Deployment
 
-1. Visit https://webhooktester.dev
-2. Sign up for account
-3. Verify email
-4. Create endpoint
-5. Send test webhook: `curl -X POST https://webhooktester.dev/w/[slug] -d '{"test":"data"}'`
-6. Check request appears in dashboard
-7. Test Stripe checkout (test card: 4242 4242 4242 4242)
-8. Verify Pro badge appears
-9. Test customer portal
+**End-to-end flow:**
+1. Visit production URL
+2. Sign up for free account
+3. Create webhook endpoint
+4. Send test webhook via curl:
+   ```bash
+   curl -X POST https://[your-endpoint-url] \
+     -H "Content-Type: application/json" \
+     -d '{"test": "data"}'
+   ```
+5. Verify webhook appears in dashboard
+6. Upgrade to Pro (use test card: `4242 4242 4242 4242`)
+7. Add forwarding rule
+8. Test forwarding works
 
----
-
-## Step 7: Go Live (After Testing)
-
-**Switch Stripe to Live Mode:**
-
-1. Go to https://dashboard.stripe.com/apikeys (live mode)
-2. Update Vercel env vars with live keys
-3. Go to https://dashboard.stripe.com/webhooks (live mode)
-4. Create live webhook endpoint (same URL)
-5. Update `STRIPE_WEBHOOK_SECRET` with live webhook secret
-6. Redeploy Vercel
-
-**Ask Tom first before switching to live mode!**
+**Expected results:**
+- ✅ Webhooks received and displayed
+- ✅ Stripe checkout redirects correctly
+- ✅ Subscription status updates
+- ✅ Pro features unlock after payment
+- ✅ Forwarding rules work
 
 ---
 
-## Step 8: Configure Domain (Optional)
+### 5. Switch to Live Mode (After Testing)
 
-If using custom domain `webhooktester.dev`:
+**⚠️ IMPORTANT: Do this ONLY after Tom approves**
 
-1. Vercel: Add domain in project settings
-2. Update DNS records as instructed by Vercel
-3. Wait for DNS propagation
-4. Update `NEXT_PUBLIC_SITE_URL` if needed
-
----
-
-## Step 9: Post-Deployment
-
-- [ ] Update product queue status to `shipped`
-- [ ] Add to SwiftLabs dashboard
-- [ ] Message Tom with launch URL
-- [ ] Monitor for errors in Vercel logs
-- [ ] Monitor Stripe webhook deliveries
-- [ ] Set up cron job for data cleanup
+1. Get live Stripe keys from dashboard (toggle **View test data** → **Live mode**)
+2. Update environment variables in Vercel:
+   - `STRIPE_SECRET_KEY` → live key (starts with `sk_live_`)
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` → live key (starts with `pk_live_`)
+   - `STRIPE_PRICE_ID` → create live price in Stripe dashboard
+   - `STRIPE_WEBHOOK_SECRET` → create new webhook endpoint for live mode
+3. Redeploy
 
 ---
 
-## Troubleshooting
+## 📊 Post-Deployment
+
+After successful deployment:
+
+1. **Update product queue:**
+   ```bash
+   # Mark as shipped in product-queue.json
+   ```
+
+2. **Log to dashboard:**
+   ```bash
+   node ~/projects/swiftlabs/scripts/log-activity.mjs deploy builder webhooktester "Deployed to production at [URL]"
+   ```
+
+3. **Add to SwiftLabs dashboard** (in `~/projects/swiftlabs/dashboard/`)
+
+4. **Message Tom:**
+   ```
+   🚀 Webhook Tester deployed to production!
+   
+   URL: [production URL]
+   Status: Test mode (Stripe test keys)
+   
+   Next steps:
+   - Test end-to-end flow
+   - Switch to live Stripe keys when ready
+   - Start SEO content creation
+   ```
+
+---
+
+## 🐛 Troubleshooting
 
 **Build fails on Vercel:**
-- Check environment variables are set
-- Verify Stripe API version matches installed package
-- Check Vercel build logs for specifics
+- Check build logs for TypeScript errors
+- Verify all environment variables are set
+- Check Node.js version (should be 18+)
 
-**Auth not working:**
-- Verify Supabase URL and anon key are correct
-- Check Supabase email auth is enabled
-- Verify redirect URLs in Supabase auth settings
+**Stripe webhook not working:**
+- Verify webhook URL is correct
+- Check webhook signing secret matches env var
+- Test webhook manually in Stripe dashboard
 
-**Stripe checkout fails:**
-- Verify Stripe keys are in test mode
-- Check webhook secret matches Stripe dashboard
-- Verify price ID is correct
-- Check Vercel function logs
+**Database errors:**
+- Verify Supabase keys are correct
+- Check RLS policies are deployed
+- Ensure user is authenticated
 
-**Webhooks not arriving:**
-- Verify endpoint slug is correct in URL
-- Check request was sent to correct domain
-- Look at Vercel function logs for errors
-- Verify database connection working
-
----
-
-## Monitoring
-
-**Vercel Logs:** https://vercel.com/[project]/logs  
-**Stripe Webhooks:** https://dashboard.stripe.com/webhooks  
-**Supabase Logs:** https://supabase.com/dashboard/project/ylehaohyelejaytpzrbf/logs/explorer
-
----
-
-**Status:** Ready to deploy  
-**Blockers:** None (Vercel CLI auth resolved by web UI option)  
-**Estimated deployment time:** 30-45 minutes
+**Forwarding not working:**
+- Check user has Pro subscription
+- Verify target URL is reachable
+- Check forwarding rule is enabled
