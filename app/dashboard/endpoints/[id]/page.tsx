@@ -1,9 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { getEndpoint } from '@/lib/actions/endpoints';
 import { getRequests, getRequestStats } from '@/lib/actions/requests';
+import { getForwardingRules, getUserSubscription } from '@/lib/actions/forwarding';
 import { CopyButton } from '@/components/copy-button';
 import { RequestsList } from '@/components/requests-list';
 import { EndpointSettings } from '@/components/endpoint-settings';
+import { ForwardingRulesWrapper } from '@/components/forwarding-rules-wrapper';
 import { getEndpointUrl } from '@/lib/utils/endpoints';
 
 export const metadata = {
@@ -37,6 +39,11 @@ export default async function EndpointDetailPage({ params, searchParams }: PageP
 
   // Get stats
   const { stats } = await getRequestStats(endpoint.id);
+
+  // Get forwarding rules and subscription
+  const { rules = [] } = await getForwardingRules(endpoint.id);
+  const { subscription } = await getUserSubscription();
+  const isPro = subscription?.plan === 'pro';
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -110,6 +117,15 @@ export default async function EndpointDetailPage({ params, searchParams }: PageP
             </div>
           </div>
         )}
+      </div>
+
+      {/* Forwarding Rules */}
+      <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <ForwardingRulesWrapper
+          endpointId={endpoint.id}
+          initialRules={rules}
+          isPro={isPro}
+        />
       </div>
 
       {/* Requests List */}
