@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --color-brand: 37 99 235; /* blue-600 */
+  --color-brand-light: 59 130 246; /* blue-500 */
+  --color-brand-dark: 29 78 216; /* blue-700 */
+}
+
+body {
+  @apply antialiased;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-zinc-100 dark:bg-zinc-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-700 dark:hover:bg-zinc-600;
+  border-radius: 4px;
+}
+
+/* Code blocks */
+pre {
+  @apply overflow-x-auto rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900;
+}
+
+code {
+  @apply font-mono text-sm;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
